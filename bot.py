@@ -27,6 +27,7 @@ def format_espi(espi):
 load_dotenv()
 TOKEN = os.getenv('DISCORD_TOKEN')
 GUILD = os.getenv('DISCORD_GUILD')
+ESPI_CHANNEL_NAME = 'espi'
 
 CHANNELS_WITH_ID = {}
 bot = commands.Bot(command_prefix="!")
@@ -38,7 +39,7 @@ async def call_on_me():
     espi = get_last_espi()
     if is_espi_new(espi.published):
         last_espi_timestamp = espi.published
-        message_channel = bot.get_channel(CHANNELS_WITH_ID['espi'])
+        message_channel = bot.get_channel(CHANNELS_WITH_ID[ESPI_CHANNEL_NAME])
         print(f"Sending espi to {message_channel}")
         await message_channel.send(format_espi(espi))
 
