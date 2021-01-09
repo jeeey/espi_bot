@@ -45,16 +45,26 @@ CHANNELS_WITH_ID = {}
 bot = commands.Bot(command_prefix="!")
 
 
+async def send_info_to_channel(name, info):
+    channel = bot.get_channel(CHANNELS_WITH_ID[name])
+    await channel.send(format_espi(info))
+
+
 async def send_info_to_channels(info):
     message_channel = bot.get_channel(CHANNELS_WITH_ID[ESPI_CHANNEL_NAME])
 
     if is_stock("INNO-GENE", info.title):
-        innogene_channel = bot.get_channel(CHANNELS_WITH_ID['innogene'])
-        await innogene_channel.send(format_espi(info))
-
-    if is_stock("X-TRADE BROKERS", info.title):
-        xtb_channel = bot.get_channel(CHANNELS_WITH_ID['xtb'])
-        await xtb_channel.send(format_espi(info))
+        await send_info_to_channel('innogene', info)
+    elif is_stock("X-TRADE BROKERS", info.title):
+        await send_info_to_channel('xtb', info)
+    elif is_stock("MERCATOR", info.title):
+        await send_info_to_channel('mercator', info)
+    elif is_stock("ALLEGRO.EU", info.title):
+        await send_info_to_channel('allegro', info)
+    elif is_stock("BIOMED", info.title):
+        await send_info_to_channel('biomed', info)
+    elif is_stock("GRODNO", info.title):
+        await send_info_to_channel('grodno', info)
 
     print(f"Sending espi to {message_channel}")
     await message_channel.send(format_espi(info))
@@ -92,6 +102,7 @@ async def on_ready():
         CHANNELS_WITH_ID[channel.name] = channel.id
 
 
+#MAIN
 call_on_me_espi.start()
 call_on_me_ebi.start()
 bot.run(TOKEN)
