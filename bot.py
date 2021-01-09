@@ -31,12 +31,8 @@ def format_espi(espi):
     return formated_espi
 
 
-def is_innogene(espi_title):
-    return "INNO-GENE" in espi_title
-
-
-def is_xtb(espi_title):
-    return "X-TRADE BROKERS" in espi_title
+def is_stock(stock_name, espi_title):
+    return stock_name in espi_title
 
 
 ### BOT Part ###
@@ -52,11 +48,11 @@ bot = commands.Bot(command_prefix="!")
 async def send_info_to_channels(info):
     message_channel = bot.get_channel(CHANNELS_WITH_ID[ESPI_CHANNEL_NAME])
 
-    if is_innogene(info.title):
+    if is_stock("INNO-GENE", info.title):
         innogene_channel = bot.get_channel(CHANNELS_WITH_ID['innogene'])
         await innogene_channel.send(format_espi(info))
 
-    if is_xtb(info.title):
+    if is_stock("X-TRADE BROKERS", info.title):
         xtb_channel = bot.get_channel(CHANNELS_WITH_ID['xtb'])
         await xtb_channel.send(format_espi(info))
 
