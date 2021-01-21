@@ -42,12 +42,19 @@ GUILD = os.getenv('DISCORD_GUILD')
 ESPI_CHANNEL_NAME = 'espi'
 
 CHANNELS_WITH_ID = {}
+USERS_WITH_ID = {}
+
 bot = commands.Bot(command_prefix="!")
 
 
 async def send_info_to_channel(name, info):
     channel = bot.get_channel(CHANNELS_WITH_ID[name])
     await channel.send(format_espi(info))
+
+
+async def send_info_to_user(name, info):
+    user = bot.get_user(USERS_WITH_ID[name])
+    await user.send(format_espi(info))
 
 
 async def send_info_to_channels(info):
@@ -100,6 +107,9 @@ async def on_ready():
     print("I'm in!")
     for channel in bot.get_all_channels():
         CHANNELS_WITH_ID[channel.name] = channel.id
+
+    for user in bot.get_all_members():
+        USERS_WITH_ID[user.display_name] = user.id
 
 
 #MAIN
