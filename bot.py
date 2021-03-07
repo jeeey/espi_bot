@@ -41,10 +41,11 @@ TOKEN = os.getenv('DISCORD_TOKEN')
 GUILD = os.getenv('DISCORD_GUILD')
 ESPI_CHANNEL_NAME = 'espi'
 
+ESPI_NAME_TO_CHANNEL = {}
 CHANNELS_WITH_ID = {}
 USERS_WITH_ID = {}
 
-bot = commands.Bot(command_prefix="!")
+bot = commands.Bot(command_prefix="e!")
 
 
 async def send_info_to_channel(name, info):
@@ -58,21 +59,26 @@ async def send_info_to_user(name, info):
 
 
 async def send_info_to_channels(info):
+
+    espi_title = info.title.split()
+    stock_name = espi_title[0]
+    channels = [val for key, val in ESPI_NAME_TO_CHANNEL.items() if stock_name in key]
+
+    title_size = 2
+    while len(channels) > 1:
+        for i in range(1, title_size):
+            stock_name = stock_name + " " + espi_title[i]
+            channels = [val for key, val in ESPI_NAME_TO_CHANNEL.items() if stock_name in key]
+        title_size += 1
+
+    if len(channels) == 1:
+        message_channel = bot.get_channel(CHANNELS_WITH_ID[channels[0]])
+        print(f"Sending espi to {message_channel}")
+        await message_channel.send(format_espi(info))
+    else:
+        print("No channel!")
+
     message_channel = bot.get_channel(CHANNELS_WITH_ID[ESPI_CHANNEL_NAME])
-
-    if is_stock("INNO-GENE", info.title):
-        await send_info_to_channel('innogene', info)
-    elif is_stock("X-TRADE BROKERS", info.title):
-        await send_info_to_channel('xtb', info)
-    elif is_stock("MERCATOR", info.title):
-        await send_info_to_channel('mercator', info)
-    elif is_stock("ALLEGRO.EU", info.title):
-        await send_info_to_channel('allegro', info)
-    elif is_stock("BIOMED", info.title):
-        await send_info_to_channel('biomed', info)
-    elif is_stock("GRODNO", info.title):
-        await send_info_to_channel('grodno', info)
-
     print(f"Sending espi to {message_channel}")
     await message_channel.send(format_espi(info))
 
@@ -100,6 +106,49 @@ async def call_on_me_ebi():
 async def before():
     await bot.wait_until_ready()
     print("Bot is ready!")
+
+
+# COMMANDS
+@bot.command()
+# @commands.has_any_role("", "")
+@commands.has_permissions(administrator=True)
+async def refresh_channels(ctx):
+    print("Before")
+    print(CHANNELS_WITH_ID)
+    for channel in bot.get_all_channels():
+        CHANNELS_WITH_ID[channel.name] = channel.id
+    print("After")
+    print(CHANNELS_WITH_ID)
+
+
+@bot.command(brief='e!sub "NAZWA SPOLKI Z ESPI" "kanal"')
+@commands.has_permissions(administrator=True)
+async def sub(ctx, espi_name, channel_name):
+    await refresh_channels(ctx)
+    ESPI_NAME_TO_CHANNEL[espi_name] = channel_name
+    message_channel = bot.get_channel(CHANNELS_WITH_ID[channel_name])
+    await message_channel.send(f"Rejestracja {espi_name}")
+
+
+@bot.command(brief='e!unsub "NAZWA SPOLKI Z ESPI"')
+@commands.has_permissions(administrator=True)
+async def unsub(ctx, espi_name):
+    message_channel = bot.get_channel(CHANNELS_WITH_ID[ESPI_NAME_TO_CHANNEL[espi_name]])
+    await message_channel.send(f"Derejestracja {espi_name}")
+    ESPI_NAME_TO_CHANNEL.pop(espi_name)
+
+
+@bot.command()
+@commands.has_permissions(administrator=True)
+async def resend_last_espi(ctx):
+    espi = get_last_espi()
+    await send_info_to_channels(espi)
+
+
+@bot.command(brief='Wypisanie wszystkich subskrybcji')
+@commands.has_permissions(administrator=True)
+async def get_subs(ctx):
+    await ctx.channel.send(ESPI_NAME_TO_CHANNEL)
 
 
 @bot.event
