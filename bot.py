@@ -1,5 +1,6 @@
 import os
 import feedparser
+import json
 from discord.ext import commands, tasks
 from dotenv import load_dotenv
 
@@ -150,15 +151,21 @@ async def resend_last_espi(ctx):
 async def get_subs(ctx):
     await ctx.channel.send(ESPI_NAME_TO_CHANNEL)
 
+@bot.command(brief='Zaladuj backup przypisan')
+@commands.has_permissions(administrator=True)
+async def load_subs(ctx):
+    global ESPI_NAME_TO_CHANNEL
+    with open('subs_backup.txt') as file:
+       data = file.read()
+
+    ESPI_NAME_TO_CHANNEL = json.loads(data)
+    print(ESPI_NAME_TO_CHANNEL)
 
 @bot.event
 async def on_ready():
     print("I'm in!")
     for channel in bot.get_all_channels():
         CHANNELS_WITH_ID[channel.name] = channel.id
-
-    for user in bot.get_all_members():
-        USERS_WITH_ID[user.display_name] = user.id
 
 
 #MAIN
