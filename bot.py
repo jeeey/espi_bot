@@ -1,40 +1,11 @@
 import os
-import feedparser
 import json
+import functions
 from discord.ext import commands, tasks
 from dotenv import load_dotenv
 
-### RSS Part ###
-espi_rss_url = "http://biznes.pap.pl/pl/rss/6614"
-ebi_rss_url = "http://biznes.pap.pl/pl/rss/6612"
 last_espi_timestamp = 0
 last_ebi_timestamp = 0
-
-
-def get_last_espi():
-    return feedparser.parse(espi_rss_url).entries[0]
-
-
-def get_last_ebi():
-    return feedparser.parse(ebi_rss_url).entries[0]
-
-
-def is_espi_new(espi_timestamp):
-    return last_espi_timestamp != espi_timestamp
-
-
-def is_ebi_new(ebi_timestamp):
-    return last_ebi_timestamp != ebi_timestamp
-
-
-def format_espi(espi):
-    formated_espi = espi.title + "\n" + espi.published + "\n" + espi.link
-    return formated_espi
-
-
-def is_stock(stock_name, espi_title):
-    return stock_name in espi_title
-
 
 ### BOT Part ###
 load_dotenv()
@@ -48,57 +19,22 @@ USERS_WITH_ID = {}
 bot = commands.Bot(command_prefix="e!")
 
 
-async def send_info_to_channel(name, info):
-    channel = bot.get_channel(CHANNELS_WITH_ID[name])
-    await channel.send(format_espi(info))
-
-
-async def send_info_to_user(name, info):
-    user = bot.get_user(USERS_WITH_ID[name])
-    await user.send(format_espi(info))
-
-
-async def send_info_to_channels(info):
-
-    espi_title = info.title.split()
-    stock_name = espi_title[0]
-    channels = [val for key, val in ESPI_NAME_TO_CHANNEL.items() if stock_name in key]
-
-    title_size = 2
-    while len(channels) > 1:
-        for i in range(1, title_size):
-            stock_name = stock_name + " " + espi_title[i]
-            channels = [val for key, val in ESPI_NAME_TO_CHANNEL.items() if stock_name in key]
-        title_size += 1
-
-    if len(channels) == 1:
-        message_channel = bot.get_channel(CHANNELS_WITH_ID[channels[0]])
-        print(f"Sending espi to {message_channel}")
-        await message_channel.send(format_espi(info))
-    else:
-        print("No channel!")
-
-    message_channel = bot.get_channel(CHANNELS_WITH_ID[ESPI_CHANNEL_NAME])
-    print(f"Sending espi to {message_channel}")
-    await message_channel.send(format_espi(info))
-
-
 @tasks.loop(seconds=10)
 async def call_on_me_espi():
     global last_espi_timestamp
-    espi = get_last_espi()
-    if is_espi_new(espi.published):
+    espi = functions.get_last_espi()
+    if functions.is_espi_new(espi.published, last_espi_timestamp):
         last_espi_timestamp = espi.published
-        await send_info_to_channels(espi)
+        await functions.send_info_to_channels(espi, bot, ESPI_NAME_TO_CHANNEL, CHANNELS_WITH_ID)
 
 
 @tasks.loop(seconds=11)
 async def call_on_me_ebi():
     global last_ebi_timestamp
-    ebi = get_last_ebi()
-    if is_ebi_new(ebi.published):
+    ebi = functions.get_last_ebi()
+    if functions.is_ebi_new(ebi.published, last_ebi_timestamp):
         last_ebi_timestamp = ebi.published
-        await send_info_to_channels(ebi)
+        await functions.send_info_to_channels(ebi, bot, ESPI_NAME_TO_CHANNEL, CHANNELS_WITH_ID)
 
 
 @call_on_me_espi.before_loop
@@ -112,9 +48,9 @@ async def before():
 @bot.command()
 # @commands.has_any_role("", "")
 @commands.has_permissions(administrator=True)
-async def refresh_channels(ctx):
+async def refresh_channels(ctx, channels_with_id):
     print("Before")
-    print(CHANNELS_WITH_ID)
+    print(channels_with_id)
     for channel in bot.get_all_channels():
         CHANNELS_WITH_ID[channel.name] = channel.id
     print("After")
@@ -141,8 +77,8 @@ async def unsub(ctx, espi_name):
 @bot.command()
 @commands.has_permissions(administrator=True)
 async def resend_last_espi(ctx):
-    espi = get_last_espi()
-    await send_info_to_channels(espi)
+    espi = functions.get_last_espi()
+    await functions.send_info_to_channels(espi, bot, ESPI_NAME_TO_CHANNEL, CHANNELS_WITH_ID)
 
 
 @bot.command(brief='Wypisanie wszystkich subskrybcji')
@@ -164,8 +100,7 @@ async def load_subs(ctx):
 @commands.has_permissions(administrator=True)
 async def print_servers(ctx):
     servers = list(bot.guilds)
-    for s in servers:
-        print(f"{s}")
+    print(f"{servers}")
 
 
 @bot.event
@@ -175,7 +110,7 @@ async def on_ready():
         CHANNELS_WITH_ID[channel.name] = channel.id
 
 
-#MAIN
-call_on_me_espi.start()
-call_on_me_ebi.start()
-bot.run(TOKEN)
+if __name__ == "__main__":
+    call_on_me_espi.start()
+    call_on_me_ebi.start()
+    bot.run(TOKEN)
