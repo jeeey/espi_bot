@@ -1,2 +1,4 @@
 .env
 subs_backup.txt
+*.swp
+*.diff

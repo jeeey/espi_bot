@@ -41,7 +41,6 @@ load_dotenv()
 TOKEN = os.getenv('DISCORD_TOKEN')
 GUILD = os.getenv('DISCORD_GUILD')
 ESPI_CHANNEL_NAME = 'espi'
-
 ESPI_NAME_TO_CHANNEL = {}
 CHANNELS_WITH_ID = {}
 USERS_WITH_ID = {}
@@ -161,10 +160,18 @@ async def load_subs(ctx):
     ESPI_NAME_TO_CHANNEL = json.loads(data)
     print(ESPI_NAME_TO_CHANNEL)
 
+@bot.command()
+@commands.has_permissions(administrator=True)
+async def print_servers(ctx):
+    servers = list(bot.guilds)
+    for s in servers:
+        print(f"{s}")
+
+
 @bot.event
 async def on_ready():
     print("I'm in!")
-    for channel in bot.get_all_channels():
+    for channel in bot.get_guild(int(GUILD)).channels:
         CHANNELS_WITH_ID[channel.name] = channel.id
 
 
