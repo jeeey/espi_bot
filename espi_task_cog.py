@@ -9,9 +9,6 @@ class EspiTaskCog(commands.Cog):
         self.espi_sender = espi_sender
         self.espi_provider = EspiProvider()
 
-        self.espi_name_to_channel = {}
-        self.channels_with_id = {}
-
         self.last_espi_timestamp = 0
         self.last_ebi_timestamp = 0
 
