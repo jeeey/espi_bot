@@ -1,8 +1,7 @@
 import json
-from discord.ext import commands
 
 
-class EspiSender(commands.Cog):
+class EspiSender:
 
     def __init__(self, bot, guild_id):
         self.bot = bot
@@ -40,48 +39,31 @@ class EspiSender(commands.Cog):
 
         await self.send_info_to_channel(info, self.default_espi_channel)
 
-    @commands.Cog.listener()
-    async def on_ready(self):
-        print("I'm in!")
-        for channel in self.bot.get_guild(self.guild_id).channels:
-            self.channels_with_id[channel.name] = channel.id
-
-    @commands.command()
-    # @commands.has_any_role("", "")
-    @commands.has_permissions(administrator=True)
-    async def refresh_channels(self, ctx):
-        print("Before")
-        print(self.channels_with_id)
+    async def refresh_channels_list(self):
         for channel in self.bot.get_all_channels():
             self.channels_with_id[channel.name] = channel.id
-        print("After")
-        print(self.channels_with_id)
 
-    @commands.command(brief='e!sub "NAZWA SPOLKI Z ESPI" "kanal"')
-    @commands.has_permissions(administrator=True)
-    async def sub(self, ctx, espi_name, channel_name):
-        await self.refresh_channels(ctx)
+    async def subscribe(self, espi_name, channel_name):
+        await self.refresh_channels_list()
         self.espi_name_to_channel[espi_name] = channel_name
         message_channel = self.bot.get_channel(self.channels_with_id[channel_name])
         await message_channel.send(f"Rejestracja {espi_name}")
 
-    @commands.command(brief='e!unsub "NAZWA SPOLKI Z ESPI"')
-    @commands.has_permissions(administrator=True)
-    async def unsub(self, ctx, espi_name):
+    async def unsubscribe(self, espi_name):
         message_channel = self.bot.get_channel(self.channels_with_id[self.espi_name_to_channel[espi_name]])
         await message_channel.send(f"Derejestracja {espi_name}")
         self.espi_name_to_channel.pop(espi_name)
 
-    @commands.command(brief='Wypisanie wszystkich subskrybcji')
-    @commands.has_permissions(administrator=True)
     async def get_subs(self, ctx):
         await ctx.channel.send(self.espi_name_to_channel)
 
-    @commands.command(brief='Zaladuj backup przypisan')
-    @commands.has_permissions(administrator=True)
-    async def load_subs(self, ctx):
+    async def load_subs(self):
         with open('subs_backup.txt') as file:
             data = file.read()
 
         self.espi_name_to_channel = json.loads(data)
         print(self.espi_name_to_channel)
+
+    async def create_channel_list(self):
+        for channel in self.bot.get_guild(self.guild_id).channels:
+            self.channels_with_id[channel.name] = channel.id

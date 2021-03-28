@@ -1,13 +1,12 @@
-from espi_provider import EspiProvider
 from discord.ext import commands, tasks
 
 
-class EspiTaskCog(commands.Cog):
+class EspiTasks(commands.Cog):
 
-    def __init__(self, bot, espi_sender):
+    def __init__(self, bot, espi_provider,espi_sender):
         self.bot = bot
         self.espi_sender = espi_sender
-        self.espi_provider = EspiProvider()
+        self.espi_provider = espi_provider
 
         self.last_espi_timestamp = 0
         self.last_ebi_timestamp = 0
@@ -41,8 +40,7 @@ class EspiTaskCog(commands.Cog):
         await self.bot.wait_until_ready()
         print("Bot is ready!")
 
-    @commands.command()
-    @commands.has_permissions(administrator=True)
-    async def resend_last_espi(self, ctx):
-        espi = self.espi_provider.get_last_espi()
-        await self.espi_sender.send_info_to_channels(espi)
+    @commands.Cog.listener()
+    async def on_ready(self):
+        print("I'm in!")
+        await self.espi_sender.create_channel_list()
